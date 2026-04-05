@@ -33,6 +33,14 @@
   .btn-inner:hover{filter:brightness(1.08)}
   .disclaimer{color:rgba(255,255,255,.4);font-size:13px;margin-top:14px;z-index:1}
   .version-date{color:rgba(255,255,255,.3);font-size:11px;margin-top:6px;z-index:1;letter-spacing:.3px}
+  .counter-badge{
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+    border-radius:20px;padding:8px 16px;margin-top:12px;z-index:1;
+  }
+  .counter-badge .counter-icon{font-size:18px}
+  .counter-badge .counter-text{font-size:13px;color:rgba(255,255,255,.8);font-weight:600}
+  .counter-badge .counter-num{font-size:16px;font-weight:900;color:#fff}
 
   /* ── Quiz ── */
   .quiz-header{padding:16px 20px 6px}
@@ -195,6 +203,11 @@
     <button class="btn" onclick="startQuiz()">
       <span class="btn-inner">Commencer le test &nbsp;→</span>
     </button>
+    <div class="counter-badge">
+      <span class="counter-icon">👥</span>
+      <span class="counter-text">Tests démarrés :</span>
+      <span class="counter-num" id="counter-display">...</span>
+    </div>
     <p class="disclaimer">Gratuit · 3 minutes · Résultats instantanés</p>
     <p class="version-date">🔄 Dernière mise à jour : 05 avril 2026 à 18h30</p>
     <p class="version-date">✨ Application créée par Stef64</p>
@@ -525,10 +538,40 @@ function showScreen(id){
 }
 
 /* ══════════════════════════════════════════════════
+   COMPTEUR
+══════════════════════════════════════════════════ */
+const NS  = 'stef64-declic-metier'; // namespace unique
+const KEY = 'starts';
+
+async function loadCounter(){
+  try{
+    const r = await fetch(`https://api.countapi.xyz/get/${NS}/${KEY}`);
+    const d = await r.json();
+    const el = document.getElementById('counter-display');
+    if(el) el.textContent = d.value != null
+      ? Number(d.value).toLocaleString('fr-FR')
+      : '—';
+  }catch(e){
+    const el = document.getElementById('counter-display');
+    if(el) el.textContent = '—';
+  }
+}
+
+async function incrementCounter(){
+  try{
+    await fetch(`https://api.countapi.xyz/hit/${NS}/${KEY}`);
+  }catch(e){}
+}
+
+// Charge le compteur au démarrage
+window.addEventListener('load', loadCounter);
+
+/* ══════════════════════════════════════════════════
    QUIZ
 ══════════════════════════════════════════════════ */
 function startQuiz(){
   currentQ=0; answers=[]; selected=[];
+  incrementCounter(); // ← incrémente à chaque clic sur "Commencer"
   showScreen('quiz');
   renderQuestion();
 }
