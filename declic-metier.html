@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Déclic Métier</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --purple:#6C63FF;--pink:#FF6B9D;--dark:#1a1a2e;
+    --card-r:18px;--shadow:0 8px 32px rgba(0,0,0,.35)
+  }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:var(--dark);color:#fff;
+    min-height:100vh;overflow-x:hidden
+  }
+
+  /* ── Écrans ── */
+  .screen{display:none;min-height:100vh;flex-direction:column;animation:fadeIn .4s ease}
+  .screen.active{display:flex}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ── Gradients de fond ── */
+  #screen-welcome{background:linear-gradient(145deg,#6C63FF 0%,#3F3D56 55%,#1a1a2e 100%)}
+  #screen-quiz   {background:linear-gradient(160deg,var(--quizTop,#6C63FF) 0%,#1a1a2e 100%)}
+  #screen-results{background:linear-gradient(160deg,#16213e 0%,#0f3460 100%)}
+
+  /* ── Welcome ── */
+  .welcome-inner{
+    flex:1;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:40px 28px;position:relative;overflow:hidden
+  }
+  .deco-circle{
+    position:absolute;border-radius:50%;pointer-events:none
+  }
+  .deco-circle.c1{width:320px;height:320px;background:rgba(108,99,255,.14);top:-90px;right:-90px}
+  .deco-circle.c2{width:220px;height:220px;background:rgba(255,107,157,.1);bottom:40px;left:-70px}
+
+  .logo-box{
+    width:100px;height:100px;border-radius:50%;
+    background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.2);
+    display:flex;align-items:center;justify-content:center;
+    font-size:52px;margin-bottom:24px;z-index:1
+  }
+  h1{font-size:clamp(28px,7vw,38px);font-weight:900;text-align:center;margin-bottom:10px;z-index:1}
+  .welcome-sub{
+    font-size:16px;color:rgba(255,255,255,.72);text-align:center;
+    line-height:1.6;margin-bottom:38px;z-index:1;max-width:320px
+  }
+  .features{
+    width:100%;max-width:380px;
+    background:rgba(255,255,255,.09);border-radius:16px;
+    padding:20px;margin-bottom:34px;z-index:1;display:flex;flex-direction:column;gap:14px
+  }
+  .feat{display:flex;align-items:center;gap:14px;font-size:15px;font-weight:600}
+  .feat span:first-child{font-size:22px;width:30px}
+
+  .btn{
+    width:100%;max-width:380px;z-index:1;
+    border:none;border-radius:16px;cursor:pointer;overflow:hidden;
+    box-shadow:0 6px 24px rgba(255,107,157,.4)
+  }
+  .btn-inner{
+    background:linear-gradient(90deg,#FF6B9D,#C44569);
+    padding:18px;font-size:17px;font-weight:800;color:#fff;
+    display:block;text-align:center;letter-spacing:.3px
+  }
+  .btn-inner:hover{filter:brightness(1.08)}
+  .disclaimer{color:rgba(255,255,255,.4);font-size:13px;margin-top:14px;z-index:1}
+
+  /* ── Quiz ── */
+  .quiz-header{padding:16px 20px 6px}
+  .back-btn{
+    background:none;border:none;color:rgba(255,255,255,.7);
+    font-size:15px;font-weight:600;cursor:pointer;padding:4px 0
+  }
+  .back-btn:hover{color:#fff}
+
+  .progress-wrap{padding:6px 20px 10px}
+  .progress-bar{
+    height:6px;background:rgba(255,255,255,.25);border-radius:3px;overflow:hidden
+  }
+  .progress-fill{
+    height:100%;background:#fff;border-radius:3px;
+    transition:width .4s ease
+  }
+  .progress-label{
+    color:rgba(255,255,255,.7);font-size:12px;font-weight:600;
+    text-align:center;margin-top:5px
+  }
+
+  .quiz-body{flex:1;overflow-y:auto;padding:10px 20px 40px}
+  .cat-badge{
+    display:inline-block;background:rgba(255,255,255,.15);
+    border-radius:20px;padding:5px 14px;font-size:13px;font-weight:700;
+    letter-spacing:.3px;margin-bottom:16px
+  }
+  .q-emoji{font-size:52px;display:block;margin-bottom:12px}
+  .q-text{font-size:clamp(18px,5vw,22px);font-weight:800;line-height:1.35;margin-bottom:8px}
+  .q-sub{color:rgba(255,255,255,.6);font-size:14px;margin-bottom:26px;line-height:1.5}
+
+  /* Options liste */
+  .opts-list{display:flex;flex-direction:column;gap:10px}
+  .opt{
+    display:flex;align-items:center;gap:14px;
+    background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.1);
+    border-radius:14px;padding:15px 16px;cursor:pointer;
+    transition:all .18s ease;position:relative
+  }
+  .opt:hover{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3)}
+  .opt.chosen{background:rgba(255,255,255,.25);border-color:#fff}
+  .opt-emoji{font-size:24px;width:32px;flex-shrink:0}
+  .opt-label{font-size:15px;font-weight:600;flex:1}
+  .check{
+    width:20px;height:20px;border-radius:50%;background:#fff;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--purple);font-size:12px;font-weight:900;
+    opacity:0;transition:opacity .15s
+  }
+  .opt.chosen .check{opacity:1}
+
+  /* Options grille */
+  .opts-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:10px
+  }
+  .opt-grid{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.1);
+    border-radius:14px;padding:16px 12px;cursor:pointer;
+    transition:all .18s ease;position:relative
+  }
+  .opt-grid:hover{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3)}
+  .opt-grid.chosen{background:rgba(255,255,255,.25);border-color:#fff}
+  .opt-grid .opt-emoji{font-size:28px;width:auto}
+  .opt-grid .opt-label{font-size:13px;font-weight:600;text-align:center}
+  .opt-grid .check{position:absolute;top:8px;right:8px}
+
+  /* ── Résultats ── */
+  .results-inner{padding:24px 20px 40px}
+  .res-header{text-align:center;padding-bottom:24px}
+  .res-emoji{font-size:56px;display:block;margin-bottom:14px}
+  .res-title{font-size:clamp(24px,6vw,30px);font-weight:900;margin-bottom:10px}
+  .res-sub{color:rgba(255,255,255,.65);font-size:15px;line-height:1.55;max-width:340px;margin:0 auto}
+
+  /* Carte métier */
+  .career-card{
+    border-radius:20px;margin-bottom:16px;overflow:hidden;
+    box-shadow:var(--shadow);cursor:pointer
+  }
+  .career-inner{padding:20px}
+  .card-header{display:flex;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+  .rank-badge{
+    padding:4px 10px;border-radius:12px;
+    font-weight:800;font-size:11px;color:#1a1a1a
+  }
+  .compat-badge{
+    background:rgba(255,255,255,.22);padding:4px 10px;
+    border-radius:12px;font-weight:700;font-size:12px
+  }
+  .card-main{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+  .card-icon{font-size:44px}
+  .card-cat{
+    color:rgba(255,255,255,.7);font-size:11px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px
+  }
+  .card-job{font-size:clamp(18px,5vw,22px);font-weight:800;line-height:1.2}
+  .card-desc{color:rgba(255,255,255,.85);font-size:14px;line-height:1.5;margin-bottom:8px}
+  .card-details{
+    border-top:1px solid rgba(255,255,255,.2);
+    margin-top:12px;padding-top:12px;display:flex;flex-direction:column;gap:10px
+  }
+  .detail-row{display:flex;gap:10px;align-items:flex-start}
+  .detail-icon{font-size:17px;width:24px;flex-shrink:0;padding-top:1px}
+  .detail-lbl{color:rgba(255,255,255,.6);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+  .detail-val{color:#fff;font-size:14px;font-weight:600;margin-top:2px}
+  .trend-badge{
+    align-self:flex-start;background:rgba(255,255,255,.18);
+    padding:6px 12px;border-radius:20px;font-size:13px;font-weight:700;margin-top:4px
+  }
+  .tap-hint{
+    color:rgba(255,255,255,.55);font-size:12px;
+    text-align:center;margin-top:10px
+  }
+
+  /* Conseil & actions */
+  .advice-box{
+    background:rgba(255,255,255,.07);border-radius:16px;
+    padding:18px;margin-bottom:20px;
+    border-left:3px solid #FFD700
+  }
+  .advice-title{color:#FFD700;font-size:15px;font-weight:800;margin-bottom:8px}
+  .advice-text{color:rgba(255,255,255,.72);font-size:14px;line-height:1.55}
+
+  .action-btns{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+  .act-btn{
+    border:none;border-radius:14px;overflow:hidden;cursor:pointer;
+    box-shadow:0 4px 16px rgba(0,0,0,.3)
+  }
+  .act-inner{padding:16px;font-size:16px;font-weight:700;color:#fff;display:block;text-align:center}
+  .act-inner.purple{background:linear-gradient(90deg,#6C63FF,#3F3D56)}
+  .act-inner.pink  {background:linear-gradient(90deg,#FF6B9D,#C44569)}
+  .act-inner:hover{filter:brightness(1.1)}
+  .home-link{
+    display:block;text-align:center;color:rgba(255,255,255,.45);
+    font-size:15px;font-weight:600;padding:12px;cursor:pointer;
+    background:none;border:none;width:100%
+  }
+  .home-link:hover{color:rgba(255,255,255,.75)}
+  .res-footer{color:rgba(255,255,255,.22);font-size:12px;text-align:center;margin-top:8px}
+
+  /* Scrollbar */
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ ÉCRAN 1 : ACCUEIL ═══════════════ -->
+<div id="screen-welcome" class="screen active">
+  <div class="welcome-inner">
+    <div class="deco-circle c1"></div>
+    <div class="deco-circle c2"></div>
+    <div class="logo-box">🧭</div>
+    <h1>Déclic Métier</h1>
+    <p class="welcome-sub">Découvrez les métiers qui vous correspondent vraiment</p>
+    <div class="features">
+      <div class="feat"><span>❓</span><span>15 questions ciblées</span></div>
+      <div class="feat"><span>🔮</span><span>Analyse astro + personnalité</span></div>
+      <div class="feat"><span>🎯</span><span>3 propositions de carrière</span></div>
+    </div>
+    <button class="btn" onclick="startQuiz()">
+      <span class="btn-inner">Commencer le test &nbsp;→</span>
+    </button>
+    <p class="disclaimer">Gratuit · 3 minutes · Résultats instantanés</p>
+  </div>
+</div>
+
+<!-- ═══════════════ ÉCRAN 2 : QUIZ ═══════════════ -->
+<div id="screen-quiz" class="screen">
+  <div class="quiz-header">
+    <button class="back-btn" onclick="goBack()">← Retour</button>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="pFill" style="width:0%"></div></div>
+    <p class="progress-label" id="pLabel">1 / 15</p>
+  </div>
+  <div class="quiz-body" id="quiz-body"></div>
+</div>
+
+<!-- ═══════════════ ÉCRAN 3 : RÉSULTATS ═══════════════ -->
+<div id="screen-results" class="screen">
+  <div class="results-inner" id="results-inner"></div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   DONNÉES
+══════════════════════════════════════════════════ */
+const CATEGORIES = {
+  HEALTH:'Santé & Social', TECH:'Technologie & Info', ARTS:'Arts & Création',
+  EDU:'Éducation & Formation', BIZ:'Commerce & Gestion', SCI:'Sciences & Recherche',
+  NATURE:'Nature & Environnement', LAW:'Droit & Justice',
+  MEDIA:'Communication & Médias', CRAFT:'Artisanat & Manuel'
+};
+
+const ZODIAC = {
+  'Bélier':    {BIZ:3,LAW:2,MEDIA:1,CRAFT:1},
+  'Taureau':   {BIZ:2,CRAFT:3,NATURE:2,ARTS:1},
+  'Gémeaux':   {MEDIA:3,EDU:2,BIZ:2,ARTS:1},
+  'Cancer':    {HEALTH:3,EDU:2,ARTS:2,SCI:1},
+  'Lion':      {ARTS:3,BIZ:2,MEDIA:2,EDU:1},
+  'Vierge':    {SCI:3,HEALTH:2,TECH:2,LAW:1},
+  'Balance':   {LAW:3,ARTS:2,MEDIA:2,BIZ:1},
+  'Scorpion':  {SCI:3,LAW:2,HEALTH:2,TECH:1},
+  'Sagittaire':{EDU:3,NATURE:2,MEDIA:2,BIZ:1},
+  'Capricorne':{BIZ:3,LAW:2,SCI:2,TECH:1},
+  'Verseau':   {TECH:3,SCI:2,MEDIA:2,EDU:1},
+  'Poissons':  {ARTS:3,HEALTH:2,EDU:2,NATURE:1}
+};
+
+const QUESTIONS = [
+  {id:1,cat:'astrologie',emoji:'⭐',q:"Quel est votre signe astrologique ?",sub:"Les astres peuvent révéler votre personnalité profonde",type:'grid',
+   opts:[
+     {l:'Bélier',e:'♈',s:ZODIAC['Bélier']},{l:'Taureau',e:'♉',s:ZODIAC['Taureau']},
+     {l:'Gémeaux',e:'♊',s:ZODIAC['Gémeaux']},{l:'Cancer',e:'♋',s:ZODIAC['Cancer']},
+     {l:'Lion',e:'♌',s:ZODIAC['Lion']},{l:'Vierge',e:'♍',s:ZODIAC['Vierge']},
+     {l:'Balance',e:'♎',s:ZODIAC['Balance']},{l:'Scorpion',e:'♏',s:ZODIAC['Scorpion']},
+     {l:'Sagittaire',e:'♐',s:ZODIAC['Sagittaire']},{l:'Capricorne',e:'♑',s:ZODIAC['Capricorne']},
+     {l:'Verseau',e:'♒',s:ZODIAC['Verseau']},{l:'Poissons',e:'♓',s:ZODIAC['Poissons']}
+   ]},
+  {id:2,cat:'scolaire',emoji:'🎓',q:"Quel est votre niveau d'études actuel ou visé ?",sub:"Cela nous aide à cibler les formations accessibles",type:'list',
+   opts:[
+     {l:"Collège / Brevet",e:'📚',s:{CRAFT:3,NATURE:2,HEALTH:1}},
+     {l:"CAP / BEP",e:'🔧',s:{CRAFT:4,NATURE:2,HEALTH:1}},
+     {l:"Bac (général/pro)",e:'📄',s:{MEDIA:1,ARTS:1,BIZ:1,HEALTH:1}},
+     {l:"Bac +2 (BTS/DUT)",e:'🏫',s:{TECH:2,BIZ:2,HEALTH:2,CRAFT:1}},
+     {l:"Bac +3 à +5",e:'🎓',s:{SCI:2,EDU:2,LAW:2,BIZ:2}},
+     {l:"Bac +8 (Doctorat)",e:'🔬',s:{SCI:5,HEALTH:3,TECH:2,EDU:2}}
+   ]},
+  {id:3,cat:'personnel',emoji:'🧠',q:"Comment vous décririez-vous en un mot ?",sub:"Choisissez ce qui vous ressemble le plus",type:'list',
+   opts:[
+     {l:"Créatif(ve)",e:'🎨',s:{ARTS:4,MEDIA:3,CRAFT:2}},
+     {l:"Analytique",e:'🔍',s:{SCI:4,TECH:3,LAW:2}},
+     {l:"Empathique",e:'💙',s:{HEALTH:4,EDU:3,MEDIA:1}},
+     {l:"Pratique",e:'🔨',s:{CRAFT:4,NATURE:3,BIZ:2}},
+     {l:"Ambitieux(se)",e:'🚀',s:{BIZ:4,LAW:3,MEDIA:2}},
+     {l:"Aventurier(e)",e:'🌍',s:{NATURE:4,MEDIA:3,SCI:2}}
+   ]},
+  {id:4,cat:'professionnel',emoji:'🏢',q:"Quel environnement de travail vous attire ?",sub:"L'endroit où vous vous épanouissez",type:'list',
+   opts:[
+     {l:"Bureau / Open space",e:'💼',s:{BIZ:3,TECH:2,LAW:2}},
+     {l:"En plein air / Extérieur",e:'🌿',s:{NATURE:4,CRAFT:3,SCI:1}},
+     {l:"En déplacement / Voyages",e:'✈️',s:{MEDIA:3,BIZ:3,EDU:1}},
+     {l:"À domicile / Télétravail",e:'🏠',s:{TECH:4,ARTS:3,MEDIA:2}},
+     {l:"Hôpital / Clinique",e:'🏥',s:{HEALTH:5,SCI:2}},
+     {l:"Atelier / Chantier",e:'🔩',s:{CRAFT:5,NATURE:2}}
+   ]},
+  {id:5,cat:'personnel',emoji:'🎯',q:"Que faites-vous dans votre temps libre ?",sub:"Vos passions révèlent votre vocation",type:'list',
+   opts:[
+     {l:"Créer (art, musique, écriture...)",e:'🎸',s:{ARTS:5,MEDIA:3,CRAFT:1}},
+     {l:"Lire et me documenter",e:'📖',s:{SCI:4,EDU:3,LAW:2}},
+     {l:"Sport et activités physiques",e:'⚽',s:{HEALTH:3,NATURE:3,CRAFT:2}},
+     {l:"Socialiser / Aider les autres",e:'🤝',s:{HEALTH:4,EDU:3,MEDIA:2}},
+     {l:"Coder / Jeux vidéo / Tech",e:'🖥️',s:{TECH:5,SCI:2,MEDIA:1}},
+     {l:"Bricoler / Construire",e:'🔧',s:{CRAFT:5,NATURE:2,TECH:1}}
+   ]},
+  {id:6,cat:'professionnel',emoji:'👥',q:"Comment préférez-vous travailler ?",sub:"En solo ou en équipe ?",type:'list',
+   opts:[
+     {l:"Seul(e), en autonomie",e:'🧘',s:{TECH:3,SCI:3,ARTS:2}},
+     {l:"En équipe soudée",e:'👫',s:{HEALTH:3,BIZ:3,EDU:2}},
+     {l:"En contact avec le public",e:'🎤',s:{MEDIA:4,EDU:3,BIZ:2}},
+     {l:"En dirigeant / Manager",e:'👑',s:{BIZ:5,LAW:2,MEDIA:2}},
+     {l:"En binôme / Collaboration",e:'🤜',s:{SCI:3,TECH:3,ARTS:2}}
+   ]},
+  {id:7,cat:'personnel',emoji:'💡',q:"Qu'est-ce qui vous motive le plus ?",sub:"Ce qui vous donne envie de vous lever le matin",type:'list',
+   opts:[
+     {l:"Aider et avoir un impact social",e:'❤️',s:{HEALTH:5,EDU:3,NATURE:2}},
+     {l:"Créer et innover",e:'💫',s:{ARTS:4,TECH:4,SCI:2}},
+     {l:"Résoudre des problèmes",e:'🧩',s:{SCI:4,TECH:3,LAW:2}},
+     {l:"Organiser et optimiser",e:'📊',s:{BIZ:5,TECH:2,LAW:2}},
+     {l:"Transmettre et enseigner",e:'🏫',s:{EDU:5,MEDIA:3,HEALTH:1}},
+     {l:"Explorer et découvrir",e:'🌏',s:{SCI:4,NATURE:3,MEDIA:2}}
+   ]},
+  {id:8,cat:'professionnel',emoji:'💻',q:"Quel est votre rapport avec la technologie ?",sub:"Soyez honnête, il n'y a pas de mauvaise réponse",type:'list',
+   opts:[
+     {l:"Passionné(e), je code / développe",e:'👨‍💻',s:{TECH:6,SCI:2}},
+     {l:"À l'aise avec les outils numériques",e:'📱',s:{TECH:3,BIZ:2,MEDIA:2}},
+     {l:"Neutre, j'utilise sans plus",e:'🤷',s:{HEALTH:1,CRAFT:1,EDU:1}},
+     {l:"Je préfère travailler sans écran",e:'🌱',s:{NATURE:3,CRAFT:3,HEALTH:2}}
+   ]},
+  {id:9,cat:'personnel',emoji:'⚖️',q:"Êtes-vous plutôt manuel(le) ou intellectuel(le) ?",sub:"Votre rapport au concret vs l'abstrait",type:'list',
+   opts:[
+     {l:"Très manuel(le), j'aime de mes mains",e:'🙌',s:{CRAFT:6,NATURE:3}},
+     {l:"Plutôt manuel(le)",e:'🔨',s:{CRAFT:4,NATURE:2,HEALTH:1}},
+     {l:"Un équilibre des deux",e:'🌗',s:{HEALTH:2,TECH:2,ARTS:2,EDU:2}},
+     {l:"Plutôt intellectuel(le)",e:'📚',s:{SCI:3,EDU:3,LAW:2}},
+     {l:"Très intellectuel(le), j'aime théoriser",e:'🧬',s:{SCI:5,LAW:3,EDU:2}}
+   ]},
+  {id:10,cat:'scolaire',emoji:'📐',q:"Quelle matière vous plaisait / vous plaît le plus ?",sub:"À l'école ou en formation",type:'grid',
+   opts:[
+     {l:"Maths / Physique",e:'🔢',s:{SCI:4,TECH:4,BIZ:1}},
+     {l:"SVT / Biologie",e:'🌿',s:{SCI:4,HEALTH:3,NATURE:2}},
+     {l:"Français / Philo",e:'✍️',s:{EDU:3,MEDIA:3,LAW:2}},
+     {l:"Histoire / Géo",e:'🗺️',s:{LAW:3,EDU:3,MEDIA:2}},
+     {l:"Arts / Musique",e:'🎭',s:{ARTS:6,MEDIA:2}},
+     {l:"EPS / Sport",e:'🏃',s:{HEALTH:3,NATURE:3,CRAFT:1}},
+     {l:"Technologie / Info",e:'💾',s:{TECH:6,SCI:2}},
+     {l:"Langues vivantes",e:'🗣️',s:{MEDIA:3,EDU:3,BIZ:2}}
+   ]},
+  {id:11,cat:'professionnel',emoji:'🌐',q:"Quel secteur vous attire instinctivement ?",sub:"Votre domaine de prédilection",type:'grid',
+   opts:[
+     {l:"Santé / Médecine",e:'🏥',s:{HEALTH:6,SCI:2}},
+     {l:"Tech / Numérique",e:'💡',s:{TECH:6,SCI:2}},
+     {l:"Art / Culture",e:'🎨',s:{ARTS:6,MEDIA:2}},
+     {l:"Éducation",e:'📚',s:{EDU:6,HEALTH:1}},
+     {l:"Business / Finance",e:'💹',s:{BIZ:6,LAW:2}},
+     {l:"Nature / Écologie",e:'🌍',s:{NATURE:6,SCI:2}},
+     {l:"Justice / Droit",e:'⚖️',s:{LAW:6,EDU:1}},
+     {l:"Médias / Journalisme",e:'📺',s:{MEDIA:6,ARTS:1}}
+   ]},
+  {id:12,cat:'personnel',emoji:'🧘',q:"Comment gérez-vous la pression et le stress ?",sub:"Certains métiers sont plus exigeants que d'autres",type:'list',
+   opts:[
+     {l:"Très bien, je performe sous pression",e:'🔥',s:{LAW:3,HEALTH:3,MEDIA:2,BIZ:2}},
+     {l:"Bien, je m'adapte facilement",e:'😊',s:{BIZ:2,TECH:2,EDU:2}},
+     {l:"Moyennement, j'ai besoin de calme",e:'😌',s:{ARTS:3,NATURE:3,SCI:2}},
+     {l:"Je préfère les environnements calmes",e:'🌙',s:{ARTS:3,NATURE:4,CRAFT:3}}
+   ]},
+  {id:13,cat:'professionnel',emoji:'💰',q:"Quelle est votre relation avec la rémunération ?",sub:"Sans tabou !",type:'list',
+   opts:[
+     {l:"Je veux un salaire élevé, prioritaire",e:'💎',s:{BIZ:4,LAW:4,TECH:3}},
+     {l:"Important mais pas au détriment du sens",e:'⚖️',s:{BIZ:2,HEALTH:2,TECH:2,EDU:1}},
+     {l:"Le sens du métier prime sur le salaire",e:'❤️',s:{HEALTH:4,EDU:4,NATURE:3,ARTS:2}},
+     {l:"La liberté et la flexibilité avant tout",e:'🕊️',s:{ARTS:4,TECH:3,NATURE:2}}
+   ]},
+  {id:14,cat:'personnel',emoji:'🤝',q:"Votre relation avec les autres au quotidien ?",sub:"Votre façon naturelle d'interagir",type:'list',
+   opts:[
+     {l:"J'adore aider et prendre soin des gens",e:'🫂',s:{HEALTH:5,EDU:3}},
+     {l:"J'aime convaincre et négocier",e:'🗣️',s:{BIZ:5,LAW:3,MEDIA:2}},
+     {l:"Je préfère observer et analyser",e:'🔭',s:{SCI:5,TECH:3,ARTS:1}},
+     {l:"J'aime créer et surprendre",e:'✨',s:{ARTS:5,MEDIA:3,EDU:1}},
+     {l:"Je préfère agir et construire",e:'🏗️',s:{CRAFT:5,NATURE:3}}
+   ]},
+  {id:15,cat:'personnel',emoji:'🏆',q:"Quelle valeur est la plus importante pour vous ?",sub:"Votre boussole professionnelle",type:'list',
+   opts:[
+     {l:"Utilité sociale et impact",e:'🌟',s:{HEALTH:5,EDU:4,NATURE:3}},
+     {l:"Créativité et expression",e:'🎭',s:{ARTS:5,MEDIA:4,CRAFT:2}},
+     {l:"Stabilité et sécurité",e:'🏛️',s:{BIZ:3,LAW:3,EDU:3,HEALTH:2}},
+     {l:"Liberté et indépendance",e:'🦅',s:{ARTS:4,TECH:3,NATURE:3}},
+     {l:"Prestige et reconnaissance",e:'🏅',s:{LAW:5,BIZ:4,MEDIA:3}},
+     {l:"Innovation et découverte",e:'🔬',s:{SCI:5,TECH:4,NATURE:2}}
+   ]}
+];
+
+const CAREERS = {
+  HEALTH:{color:'#FF6B9D',grad:['#FF6B9D','#C44569'],icon:'🏥',label:'Santé & Social',jobs:[
+    {t:'Infirmier(e)',d:'Prendre soin des patients, administrer les soins, travailler en équipe médicale.',sal:'2 200 – 3 500 €/mois',std:"Diplôme d'État (3 ans IFSI)",q:['Empathie','Rigueur','Résistance'],trend:'🔥 Très demandé'},
+    {t:'Médecin généraliste',d:'Diagnostiquer, traiter et suivre les patients dans leur santé globale.',sal:'5 000 – 8 000 €/mois',std:'Doctorat médecine (9 ans)',q:['Écoute','Curiosité','Décision'],trend:'⭐ Stable & valorisé'},
+    {t:'Travailleur(se) social(e)',d:'Accompagner des personnes en difficulté pour améliorer leurs conditions de vie.',sal:'1 800 – 2 800 €/mois',std:'BTS / Licence travail social',q:['Empathie','Patience','Communication'],trend:'📈 En forte croissance'},
+    {t:'Psychologue',d:'Accompagner les personnes dans leur développement et leurs difficultés mentales.',sal:'2 500 – 5 000 €/mois',std:'Master psychologie (5 ans)',q:['Écoute active','Neutralité','Analyse'],trend:'📈 En forte croissance'}
+  ]},
+  TECH:{color:'#4ECDC4',grad:['#4ECDC4','#1A535C'],icon:'💻',label:'Technologie & Info',jobs:[
+    {t:'Développeur(se) Full Stack',d:'Concevoir et développer des applications web de A à Z.',sal:'3 500 – 6 500 €/mois',std:'Bac+2 à Bac+5 (informatique)',q:['Logique','Créativité','Rigueur'],trend:'🔥 Très demandé'},
+    {t:'Data Scientist',d:"Analyser de grandes quantités de données pour en extraire des insights.",sal:'4 000 – 8 000 €/mois',std:'Bac+5 (maths, info, data)',q:['Analyse','Curiosité','Statistiques'],trend:'🚀 Marché en explosion'},
+    {t:'Expert(e) Cybersécurité',d:'Protéger les systèmes informatiques contre les cyberattaques.',sal:'4 500 – 9 000 €/mois',std:'Bac+3 à Bac+5 (sécurité)',q:['Vigilance','Analyse','Curiosité'],trend:'🔥 Très demandé'},
+    {t:'Designer UI/UX',d:'Créer des interfaces intuitives et belles pour les utilisateurs.',sal:'3 000 – 5 500 €/mois',std:'Bac+3 à Bac+5 (design)',q:['Créativité','Empathie','Rigueur'],trend:'📈 En forte croissance'}
+  ]},
+  ARTS:{color:'#A29BFE',grad:['#A29BFE','#6C5CE7'],icon:'🎨',label:'Arts & Création',jobs:[
+    {t:'Graphiste / DA',d:'Concevoir des visuels pour des marques, médias et entreprises.',sal:'2 000 – 4 500 €/mois',std:"BTS design / École d'art (2-5 ans)",q:["Créativité","Sens esthétique","Outils"],trend:'⭐ Stable & valorisé'},
+    {t:'Architecte',d:'Concevoir et superviser la construction de bâtiments.',sal:'3 000 – 7 000 €/mois',std:"Diplôme d'Architecte (6 ans)",q:["Créativité","Rigueur","Gestion projet"],trend:'⭐ Stable & valorisé'},
+    {t:'Game Designer',d:"Concevoir l'expérience, les règles et l'univers des jeux vidéo.",sal:'2 500 – 5 000 €/mois',std:'Bac+3 à Bac+5 (game design)',q:["Créativité","Culture gaming","Narration"],trend:'📈 En forte croissance'}
+  ]},
+  EDU:{color:'#FD79A8',grad:['#FD79A8','#E84393'],icon:'📚',label:'Éducation & Formation',jobs:[
+    {t:'Enseignant(e)',d:'Transmettre des savoirs et accompagner les élèves dans leur développement.',sal:'2 000 – 3 500 €/mois',std:'Master MEEF + concours',q:['Pédagogie','Patience','Organisation'],trend:'⭐ Stable & valorisé'},
+    {t:'Formateur(trice) pro',d:'Former des adultes dans des domaines spécialisés en entreprise.',sal:'2 500 – 4 500 €/mois',std:'Bac+3 + expérience',q:['Communication','Expertise','Adaptabilité'],trend:'📈 En forte croissance'},
+    {t:"Conseiller(e) d'orientation",d:"Guider les élèves et adultes dans leurs choix de formation.",sal:'2 200 – 3 800 €/mois',std:'Master psychologie / éduc.',q:['Écoute','Connaissance','Bienveillance'],trend:'⭐ Stable & valorisé'}
+  ]},
+  BIZ:{color:'#FDCB6E',grad:['#FDCB6E','#E17055'],icon:'💼',label:'Commerce & Gestion',jobs:[
+    {t:'Manager / Responsable équipe',d:'Organiser, motiver et piloter une équipe vers des objectifs.',sal:'3 500 – 7 000 €/mois',std:'Bac+3 à Bac+5 (management)',q:['Leadership','Communication','Organisation'],trend:'⭐ Stable & valorisé'},
+    {t:'Entrepreneur(se)',d:'Créer et développer sa propre entreprise ou startup.',sal:'Variable (infini possible)',std:'École de commerce / autodidacte',q:['Prise de risque','Vision','Résilience'],trend:'🚀 Éco en mutation'},
+    {t:'Commercial(e) / Business Dev',d:"Développer les ventes et partenariats d'une entreprise.",sal:'2 500 – 6 000 €/mois + commissions',std:'Bac+2 à Bac+5',q:['Persuasion','Écoute','Ténacité'],trend:'🔥 Très demandé'}
+  ]},
+  SCI:{color:'#74B9FF',grad:['#74B9FF','#0984E3'],icon:'🔬',label:'Sciences & Recherche',jobs:[
+    {t:'Chercheur(se) scientifique',d:'Mener des recherches pour faire avancer les connaissances.',sal:'2 500 – 6 000 €/mois',std:'Doctorat (Bac+8)',q:['Curiosité','Rigueur','Persévérance'],trend:'📈 En forte croissance'},
+    {t:'Ingénieur(e) biotechnologie',d:'Développer des solutions biologiques pour médecine et industrie.',sal:'3 500 – 6 500 €/mois',std:'Bac+5 (biotech)',q:['Rigueur','Innovation','Sciences'],trend:'🚀 Marché en explosion'},
+    {t:'Ingénieur(e) en IA',d:"Concevoir des systèmes d'intelligence artificielle.",sal:'4 500 – 9 000 €/mois',std:'Bac+5 (maths, info)',q:['Abstraction','Logique','Curiosité'],trend:'🔥 Très demandé'}
+  ]},
+  NATURE:{color:'#55EFC4',grad:['#55EFC4','#00B894'],icon:'🌿',label:'Nature & Environnement',jobs:[
+    {t:"Ingénieur(e) en environnement",d:'Concevoir des solutions durables pour limiter l\'impact sur la planète.',sal:'3 000 – 5 500 €/mois',std:'Bac+5 (ingénierie environnementale)',q:['Écologie','Analyse','Innovation'],trend:'🚀 Marché en explosion'},
+    {t:'Écologue / Biologiste terrain',d:'Étudier les écosystèmes naturels et proposer des actions de préservation.',sal:'2 500 – 4 500 €/mois',std:'Bac+5 (biologie, écologie)',q:['Passion nature','Observation','Rigueur'],trend:'📈 En forte croissance'},
+    {t:'Paysagiste',d:'Concevoir et aménager des espaces verts et jardins.',sal:'2 500 – 4 500 €/mois',std:'BTS / Bac+5 (paysage)',q:['Créativité','Terrain','Botanique'],trend:'⭐ Stable & valorisé'}
+  ]},
+  LAW:{color:'#B2BEC3',grad:['#636E72','#2D3436'],icon:'⚖️',label:'Droit & Justice',jobs:[
+    {t:'Avocat(e)',d:'Défendre des clients en justice et conseiller sur des questions juridiques.',sal:'3 000 – 15 000 €/mois',std:"Master droit + École d'avocat (7 ans)",q:['Argumentation','Rigueur','Résistance'],trend:'⭐ Stable & valorisé'},
+    {t:'Juriste d\'entreprise',d:"Assurer la conformité juridique des opérations d'une entreprise.",sal:'3 500 – 7 000 €/mois',std:'Master droit des affaires (5 ans)',q:['Précision','Conseil','Diplomatie'],trend:'📈 En forte croissance'},
+    {t:'Notaire',d:'Rédiger et authentifier des actes juridiques.',sal:'4 000 – 10 000 €/mois',std:'Master droit + stage notarial',q:['Rigueur','Discrétion','Organisation'],trend:'⭐ Stable & valorisé'}
+  ]},
+  MEDIA:{color:'#FD79A8',grad:['#6C63FF','#E84393'],icon:'📺',label:'Communication & Médias',jobs:[
+    {t:'Journaliste',d:"Enquêter, rédiger et diffuser l'information sur tous supports.",sal:'2 000 – 5 000 €/mois',std:'Bac+3 à Bac+5 (journalisme)',q:['Curiosité','Écriture','Réactivité'],trend:'⚠️ Secteur en mutation'},
+    {t:'Community Manager',d:"Gérer la présence en ligne d'une marque.",sal:'2 000 – 6 000 €/mois',std:'BTS com / autodidacte possible',q:['Créativité','Réseaux','Rédaction'],trend:'🔥 Très demandé'},
+    {t:'Réalisateur(trice) / Vidéaste',d:'Concevoir et produire du contenu vidéo.',sal:'2 000 – 8 000 €/mois',std:'École de cinéma / autodidacte',q:['Vision artistique','Technique','Équipe'],trend:'📈 En forte croissance'}
+  ]},
+  CRAFT:{color:'#E17055',grad:['#E17055','#D63031'],icon:'🔧',label:'Artisanat & Manuel',jobs:[
+    {t:'Électricien(ne)',d:'Installer et maintenir les installations électriques.',sal:'2 200 – 4 000 €/mois',std:'CAP / BTS électrotechnique',q:['Précision','Sécurité','Technicité'],trend:'🔥 Très demandé'},
+    {t:'Menuisier(e) / Ébéniste',d:'Fabriquer et installer des éléments en bois sur mesure.',sal:'2 000 – 4 000 €/mois',std:'CAP / BTS bois',q:['Précision','Créativité','Passion bois'],trend:'⭐ Stable & valorisé'},
+    {t:'Cuisinier(e) / Chef',d:'Créer des plats et faire vivre une expérience culinaire.',sal:'1 800 – 8 000 €/mois',std:'CAP cuisine / Bac Pro',q:['Créativité','Endurance','Passion'],trend:'⭐ Stable & valorisé'}
+  ]}
+};
+
+const CAT_GRADIENTS = {
+  astrologie:   '#6C63FF,#3F3D56',
+  scolaire:     '#0984E3,#74B9FF',
+  personnel:    '#6C5CE7,#A29BFE',
+  professionnel:'#00B894,#55EFC4'
+};
+
+const CAT_LABELS = {
+  astrologie:'🌟 Astrologie',
+  scolaire:'📚 Parcours scolaire',
+  personnel:'💬 Personnel',
+  professionnel:'💼 Professionnel'
+};
+
+/* ══════════════════════════════════════════════════
+   ÉTAT
+══════════════════════════════════════════════════ */
+let currentQ = 0;
+let answers  = [];
+let chosen   = null;
+
+/* ══════════════════════════════════════════════════
+   NAVIGATION ÉCRANS
+══════════════════════════════════════════════════ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ══════════════════════════════════════════════════
+   QUIZ
+══════════════════════════════════════════════════ */
+function startQuiz(){
+  currentQ=0; answers=[]; chosen=null;
+  showScreen('quiz');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const q = QUESTIONS[currentQ];
+  chosen = null;
+
+  // gradient de fond dynamique
+  const g = CAT_GRADIENTS[q.cat] || '#6C63FF,#3F3D56';
+  document.getElementById('screen-quiz').style.background =
+    `linear-gradient(160deg,${g.split(',')[0]} 0%,#1a1a2e 100%)`;
+
+  // progress
+  const pct = ((currentQ+1)/QUESTIONS.length*100).toFixed(0);
+  document.getElementById('pFill').style.width = pct+'%';
+  document.getElementById('pLabel').textContent = `${currentQ+1} / ${QUESTIONS.length}`;
+
+  // corps
+  const body = document.getElementById('quiz-body');
+  body.innerHTML = `
+    <div class="cat-badge">${CAT_LABELS[q.cat]}</div>
+    <span class="q-emoji">${q.emoji}</span>
+    <p class="q-text">${q.q}</p>
+    <p class="q-sub">${q.sub}</p>
+    <div class="${q.type==='grid'?'opts-grid':'opts-list'}" id="opts"></div>
+  `;
+
+  const container = document.getElementById('opts');
+  q.opts.forEach((opt,i)=>{
+    const el = document.createElement('div');
+    el.className = q.type==='grid' ? 'opt-grid' : 'opt';
+    el.id = 'opt-'+i;
+    el.innerHTML = q.type==='grid'
+      ? `<span class="opt-emoji">${opt.e}</span>
+         <span class="opt-label">${opt.l}</span>
+         <div class="check">✓</div>`
+      : `<span class="opt-emoji">${opt.e}</span>
+         <span class="opt-label">${opt.l}</span>
+         <div class="check">✓</div>`;
+    el.onclick = ()=>selectOption(opt, i, q.type);
+    container.appendChild(el);
+  });
+}
+
+function selectOption(opt, idx, type){
+  // marquer la sélection
+  document.querySelectorAll(type==='grid'?'.opt-grid':'.opt')
+    .forEach(el=>el.classList.remove('chosen'));
+  document.getElementById('opt-'+idx).classList.add('chosen');
+  chosen = opt;
+
+  // pause visuelle puis suivant
+  setTimeout(()=>{
+    answers.push(opt);
+    if(currentQ < QUESTIONS.length-1){
+      currentQ++;
+      renderQuestion();
+    } else {
+      showResults();
+    }
+  }, 350);
+}
+
+function goBack(){
+  if(currentQ===0){ showScreen('welcome'); return; }
+  answers.pop();
+  currentQ--;
+  renderQuestion();
+}
+
+/* ══════════════════════════════════════════════════
+   ALGORITHME
+══════════════════════════════════════════════════ */
+function computeScores(){
+  const totals={};
+  answers.forEach(a=>{
+    if(!a||!a.s) return;
+    Object.entries(a.s).forEach(([cat,pts])=>{ totals[cat]=(totals[cat]||0)+pts; });
+  });
+  return totals;
+}
+
+function getTopCareers(n=3){
+  const scores = computeScores();
+  const max = Math.max(...Object.values(scores));
+  return Object.entries(scores)
+    .sort(([,a],[,b])=>b-a)
+    .slice(0,n)
+    .map(([cat,score])=>{
+      const data = CAREERS[cat];
+      if(!data) return null;
+      const job = data.jobs[Math.floor(Math.random()*data.jobs.length)];
+      return { cat, score, compat: max>0?Math.round(score/max*100):0, ...data, job };
+    }).filter(Boolean);
+}
+
+/* ══════════════════════════════════════════════════
+   RÉSULTATS
+══════════════════════════════════════════════════ */
+const RANK_COLORS = ['#FFD700','#C0C0C0','#CD7F32'];
+const RANK_LABELS = ['1er choix','2e choix','3e choix'];
+
+function showResults(){
+  showScreen('results');
+  const careers = getTopCareers(3);
+  const el = document.getElementById('results-inner');
+
+  const cards = careers.map((c,i)=>`
+    <div class="career-card" onclick="toggleCard('card-detail-${i}','hint-${i}')">
+      <div class="career-inner" style="background:linear-gradient(135deg,${c.grad[0]},${c.grad[1]})">
+        <div class="card-header">
+          <span class="rank-badge" style="background:${RANK_COLORS[i]}">${RANK_LABELS[i]}</span>
+          <span class="compat-badge">${c.compat}% match</span>
+        </div>
+        <div class="card-main">
+          <span class="card-icon">${c.icon}</span>
+          <div>
+            <p class="card-cat">${c.label}</p>
+            <p class="card-job">${c.job.t}</p>
+          </div>
+        </div>
+        <p class="card-desc">${c.job.d}</p>
+        <div id="card-detail-${i}" style="display:none">
+          <div class="card-details">
+            <div class="detail-row">
+              <span class="detail-icon">💰</span>
+              <div><p class="detail-lbl">Salaire indicatif</p><p class="detail-val">${c.job.sal}</p></div>
+            </div>
+            <div class="detail-row">
+              <span class="detail-icon">🎓</span>
+              <div><p class="detail-lbl">Formation</p><p class="detail-val">${c.job.std}</p></div>
+            </div>
+            <div class="detail-row">
+              <span class="detail-icon">⭐</span>
+              <div><p class="detail-lbl">Qualités clés</p><p class="detail-val">${c.job.q.join(' · ')}</p></div>
+            </div>
+            <div class="trend-badge">${c.job.trend}</div>
+          </div>
+        </div>
+        <p class="tap-hint" id="hint-${i}">▼ Voir les détails</p>
+      </div>
+    </div>
+  `).join('');
+
+  el.innerHTML = `
+    <div class="res-header">
+      <span class="res-emoji">🎉</span>
+      <h2 class="res-title">Vos résultats</h2>
+      <p class="res-sub">Voici les 3 orientations qui correspondent le mieux à votre profil</p>
+    </div>
+    ${cards}
+    <div class="advice-box">
+      <p class="advice-title">💡 Conseil</p>
+      <p class="advice-text">Ces résultats sont une piste de réflexion, pas une vérité absolue. Discutez-en avec un conseiller d'orientation ou explorez davantage les métiers qui vous attirent avant de vous décider.</p>
+    </div>
+    <div class="action-btns">
+      <button class="act-btn" onclick="shareResults(${JSON.stringify(careers.map(c=>c.job.t))})">
+        <span class="act-inner purple">📤&nbsp; Partager mes résultats</span>
+      </button>
+      <button class="act-btn" onclick="startQuiz()">
+        <span class="act-inner pink">🔄&nbsp; Refaire le test</span>
+      </button>
+    </div>
+    <button class="home-link" onclick="showScreen('welcome')">← Accueil</button>
+    <p class="res-footer">Déclic Métier · Votre orientation sur mesure</p>
+  `;
+}
+
+function toggleCard(detailId, hintId){
+  const d = document.getElementById(detailId);
+  const h = document.getElementById(hintId);
+  const open = d.style.display==='block';
+  d.style.display = open?'none':'block';
+  h.textContent   = open?'▼ Voir les détails':'▲ Réduire';
+}
+
+async function shareResults(titles){
+  const text = `J'ai découvert mon orientation idéale avec Déclic Métier : ${titles[0]} ! Essaie pour trouver la tienne.`;
+  if(navigator.share){
+    try{ await navigator.share({title:'Déclic Métier', text}); } catch(_){}
+  } else {
+    await navigator.clipboard.writeText(text).catch(()=>{});
+    alert('Résultats copiés dans le presse-papier !');
+  }
+}
+</script>
+</body>
+</html>
