@@ -877,7 +877,7 @@ function toggleCard(detailId, hintId){
 }
 
 async function shareResults(titles){
-  const text=`J'ai découvert mon orientation idéale avec Déclic Métier : ${titles[0]} ! Essaie pour trouver la tienne. 👉 https://stephanesalomon-bot.github.io/declic-metier/`;
+  const text=`J'ai découvert mon orientation idéale avec Déclic Métier : ${titles[0]} ! Essaie pour trouver la tienne. 👉 https://Stef64-rgb.github.io/declic-metier/`;
   if(navigator.share){
     try{ await navigator.share({title:'Déclic Métier',text}); } catch(_){}
   } else {
